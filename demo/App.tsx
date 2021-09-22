@@ -5,23 +5,15 @@ import * as tf from "@tensorflow/tfjs";
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
 
-interface Dimensions {
-  height: number,
-  width: number,
-} 
-
-let textureDims: Dimensions;
-if (Platform.OS === 'ios') {
-  textureDims = {
+const textureDims = Platform.OS === 'ios' ?
+  {
     height: 1920,
     width: 1080,
-  };
- } else {
-  textureDims = {
+  } :
+   {
     height: 1200,
     width: 1600,
   };
-}
 
 const TensorCamera = cameraWithTensors(Camera);
 let net: mobilenet.MobileNet;
