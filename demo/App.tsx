@@ -15,6 +15,9 @@ const textureDims = Platform.OS === 'ios' ?
     width: 1600,
   };
 
+let frame = 0;
+const computeRecognitionEveryNFrames = 3;
+
 const TensorCamera = cameraWithTensors(Camera);
 let net: mobilenet.MobileNet;
 
@@ -31,11 +34,15 @@ export default function App() {
 
   const handleCameraStream = (images: IterableIterator<tf.Tensor3D>) => {
     const loop = async () => {
-      const nextImageTensor = images.next().value;
-      const objects = await net.classify(nextImageTensor);
-      if(objects && objects.length > 0){
-        setDetections(objects.map(object => object.className));
+      if(frame % computeRecognitionEveryNFrames === 0){
+        const nextImageTensor = images.next().value;
+        const objects = await net.classify(nextImageTensor);
+        if(objects && objects.length > 0){
+          setDetections(objects.map(object => object.className));
+        }
       }
+      frame += 1;
+      frame = frame % computeRecognitionEveryNFrames;
       requestAnimationFrame(loop);
     }
     loop();
