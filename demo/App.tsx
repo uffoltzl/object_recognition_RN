@@ -19,33 +19,34 @@ let frame = 0;
 const computeRecognitionEveryNFrames = 60;
 
 const TensorCamera = cameraWithTensors(Camera);
-let net: mobilenet.MobileNet;
 
 const loadModel = async () => {
   await tf.ready();
   tf.getBackend();
-  net = await mobilenet.load({version: 1, alpha: 0.25});
 }
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState<null | boolean>(null);
   const [detections, setDetections] = useState<string[]>([]);
+  const [net, setNet] = useState<mobilenet.MobileNet>();
 
 
   const handleCameraStream = (images: IterableIterator<tf.Tensor3D>) => {
     const loop = async () => {
-      if(frame % computeRecognitionEveryNFrames === 0){
-        const nextImageTensor = images.next().value;
-        if(nextImageTensor){
-          const objects = await net.classify(nextImageTensor);
-          if(objects && objects.length > 0){
-            setDetections(objects.map(object => object.className));
+      if(net) {
+        if(frame % computeRecognitionEveryNFrames === 0){
+          const nextImageTensor = images.next().value;
+          if(nextImageTensor){
+            const objects = await net.classify(nextImageTensor);
+            if(objects && objects.length > 0){
+              setDetections(objects.map(object => object.className));
+            }
+            tf.dispose([nextImageTensor]);
           }
-          tf.dispose([nextImageTensor]);
         }
+        frame += 1;
+        frame = frame % computeRecognitionEveryNFrames;
       }
-      frame += 1;
-      frame = frame % computeRecognitionEveryNFrames;
 
       requestAnimationFrame(loop);
     }
@@ -57,6 +58,7 @@ export default function App() {
       const { status } = await Camera.requestPermissionsAsync();
       setHasPermission(status === 'granted');
       await loadModel();
+      setNet(await mobilenet.load({version: 1, alpha: 0.25}));
     })();
   }, []);
 
@@ -66,7 +68,7 @@ export default function App() {
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
-  if(net === null){
+  if(!net){
     return <Text>Model not loaded</Text>;
   }
 
