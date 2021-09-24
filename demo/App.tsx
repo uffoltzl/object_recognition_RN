@@ -16,7 +16,7 @@ const textureDims = Platform.OS === 'ios' ?
   };
 
 let frame = 0;
-const computeRecognitionEveryNFrames = 3;
+const computeRecognitionEveryNFrames = 60;
 
 const TensorCamera = cameraWithTensors(Camera);
 let net: mobilenet.MobileNet;
@@ -24,7 +24,7 @@ let net: mobilenet.MobileNet;
 const loadModel = async () => {
   await tf.ready();
   tf.getBackend();
-  net = await mobilenet.load();
+  net = await mobilenet.load({version: 1, alpha: 0.25});
 }
 
 export default function App() {
@@ -36,13 +36,17 @@ export default function App() {
     const loop = async () => {
       if(frame % computeRecognitionEveryNFrames === 0){
         const nextImageTensor = images.next().value;
-        const objects = await net.classify(nextImageTensor);
-        if(objects && objects.length > 0){
-          setDetections(objects.map(object => object.className));
+        if(nextImageTensor){
+          const objects = await net.classify(nextImageTensor);
+          if(objects && objects.length > 0){
+            setDetections(objects.map(object => object.className));
+          }
+          tf.dispose([nextImageTensor]);
         }
       }
       frame += 1;
       frame = frame % computeRecognitionEveryNFrames;
+
       requestAnimationFrame(loop);
     }
     loop();
