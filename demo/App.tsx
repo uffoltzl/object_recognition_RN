@@ -20,7 +20,7 @@ const computeRecognitionEveryNFrames = 60;
 
 const TensorCamera = cameraWithTensors(Camera);
 
-const loadModel = async () => {
+const initialiseTensorflow = async () => {
   await tf.ready();
   tf.getBackend();
 }
@@ -57,7 +57,7 @@ export default function App() {
     (async () => {
       const { status } = await Camera.requestPermissionsAsync();
       setHasPermission(status === 'granted');
-      await loadModel();
+      await initialiseTensorflow();
       setNet(await mobilenet.load({version: 1, alpha: 0.25}));
     })();
   }, []);
